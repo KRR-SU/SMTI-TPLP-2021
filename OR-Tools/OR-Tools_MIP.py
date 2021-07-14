@@ -8,7 +8,7 @@ Last Modified: 04.07.2021 Selin Eyupoglu
 '''
 import time
 from ortools.linear_solver import pywraplp
-import sys
+import argparse
 
 
 def GenerateRankList(preferencesInLine):
@@ -23,11 +23,11 @@ def GenerateRankList(preferencesInLine):
         for i in range(len(element)):
             element[i] = int(element[i])
 
-
         result.append(element)
 
         preferencesInLine = preferencesInLine[preferencesInLine.find(")") + 1:]
     return result
+
 
 def GetRankInPrefList(preferredPartnerID, PreferenceList):
     # PreferenceList is a 2D list. [[x,y], [z]] denotes that id x and y are the first preference and z is the second
@@ -41,20 +41,22 @@ def GetRankInPrefList(preferredPartnerID, PreferenceList):
 
 
 def main():
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--file', '-f', metavar='', help='Input file name', type = str)
+    argparser.add_argument('--opt', '-o', metavar='', help='Specify the optimization variant. 0: Max Cardinality, 1: Egalitarian, 2: Sex-Equal', type = int, default=0, choices=[0, 1, 2])
+    args = argparser.parse_args()
+
     START_TIME = time.time()
 
-    # inputFileName = r"testInput.txt"
-    inputFileName = ""
-    if len(sys.argv) == 1:  # in this case there is only sys.argv[0] which the is the name of the python file
+    if not args.file:  # in this case there is only sys.argv[0] which the is the name of the python file
         print("No file name supplied! Program will exit!")
         exit()
     else:
-        inputFileName = sys.argv[1]
+        inputFileName = args.file
 
     f = open(inputFileName, "r")  # Read the input file
     lines = f.readlines()
     f.close()
-
 
     numberOfMan = int(lines[1])
     numberOfWoman = int(lines[2])
@@ -89,13 +91,6 @@ def main():
     ranklessManList = [[partnerID for rankList in ManList[index] for partnerID in rankList] for index in range(len(ManList))] # List of Man with the preferenceLis without rank. It is a 2D version of ManList
     ranklessWomanList = [[partnerID for rankList in WomanList[index] for partnerID in rankList] for index in range(len(WomanList))]
 
-    #print(ManList)
-    #print(ranklessManList)
-    # print(WomanList)
-    # print(ranklessWomanList)
-    # print("\n")
-
-
     # Create the mip solver with the SCIP backend.
     solver = pywraplp.Solver.CreateSolver('SCIP')
     matching = [[solver.BoolVar(name="[m" + str(mIndex) + "-w" + str(wIndex) + "]") for wIndex in range(numberOfWoman)] for mIndex in range(numberOfMan)]
@@ -107,10 +102,9 @@ def main():
         for womanID in nonPreferredWomanIDs:
             solver.Add(matching[i][womanID - 1] == 0)
 
-
     for i in range(0, numberOfWoman):  # woman with index i (id i +1)
-        renklessPreferencesOfWoman = ranklessWomanList[i]
-        nonPreferredManIDs = list(set([i for i in range(1, numberOfMan + 1)]) - set(renklessPreferencesOfWoman))  # man IDs that are not preferred by woman with index i (id i +1)
+        ranklessPreferencesOfWoman = ranklessWomanList[i]
+        nonPreferredManIDs = list(set([i for i in range(1, numberOfMan + 1)]) - set(ranklessPreferencesOfWoman))  # man IDs that are not preferred by woman with index i (id i +1)
         for manID in nonPreferredManIDs:
             solver.Add(matching[manID - 1][i] == 0)
 
@@ -131,7 +125,6 @@ def main():
                     wID = womanList[q]
                     left += matching[i][wID - 1]
 
-
                 rankOfManIn_j = GetRankInPrefList(i+1, WomanList[j-1])
                 if rankOfManIn_j != -1: # Checks if the man with id i+1 is in woman with id j's pref list. if man with id i+1 is not in the list of woman with id j, they cannot be a blocking pair.
 
@@ -142,18 +135,18 @@ def main():
                         right += matching[mID - 1][j - 1]
                     solver.Add(1 - left <= right)
 
-    # Max Cardinality Opt
-    #solver.Maximize(sum(matching[i][j] for i in range(numberOfMan) for j in range(numberOfWoman)))
-
-    #Sex Equal
-    solver.Add(z >= sum(matching[i][j-1] * GetRankInPrefList(j, ManList[i]) for i in range(numberOfMan) for j in range(1,numberOfWoman+1)) - sum(matching[i-1][j] * GetRankInPrefList(i, WomanList[j]) for i in range(1,numberOfMan+1) for j in range(numberOfWoman)))
-    solver.Add(z >= -(sum(matching[i][j-1] * GetRankInPrefList(j, ManList[i]) for i in range(numberOfMan) for j in range(1,numberOfWoman+1)) - sum(matching[i-1][j] * GetRankInPrefList(i, WomanList[j]) for i in range(1,numberOfMan+1) for j in range(numberOfWoman))))
-    
-    solver.Minimize(z)
-    
-    #Egaliatian
-    #solver.Minimize(sum(matching[i][j-1] * GetRankInPrefList(j, ManList[i]) for i in range(numberOfMan) for j in range(1,numberOfWoman+1)) + 
-                    #sum(matching[i-1][j] * GetRankInPrefList(i, WomanList[j]) for i in range(1, numberOfMan+1) for j in range(numberOfWoman)))
+    if args.opt == 0:
+        # Max Cardinality
+        solver.Maximize(sum(matching[i][j] for i in range(numberOfMan) for j in range(numberOfWoman)))
+    elif args.opt == 1:
+        # Egalitarian
+        solver.Minimize(sum(matching[i][j-1] * GetRankInPrefList(j, ManList[i]) for i in range(numberOfMan) for j in range(1, numberOfWoman+1)) + \
+                    sum(matching[i-1][j] * GetRankInPrefList(i, WomanList[j]) for i in range(1, numberOfMan+1) for j in range(numberOfWoman)))
+    elif args.opt == 2:
+        # Sex Equal
+        solver.Add(z >= sum(matching[i][j-1] * GetRankInPrefList(j, ManList[i]) for i in range(numberOfMan) for j in range(1, numberOfWoman+1)) - sum(matching[i-1][j] * GetRankInPrefList(i, WomanList[j]) for i in range(1, numberOfMan+1) for j in range(numberOfWoman)))
+        solver.Add(z >= -(sum(matching[i][j-1] * GetRankInPrefList(j, ManList[i]) for i in range(numberOfMan) for j in range(1, numberOfWoman+1)) - sum(matching[i-1][j] * GetRankInPrefList(i, WomanList[j]) for i in range(1, numberOfMan+1) for j in range(numberOfWoman))))
+        solver.Minimize(z)
 
     status = solver.Solve()
 
@@ -169,10 +162,5 @@ def main():
         print("No solution found.")
 
 
-    # print("Execution Time:", time.time() - START_TIME)
-
-
 if __name__ == '__main__':
     main()
-
-

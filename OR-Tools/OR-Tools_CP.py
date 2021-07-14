@@ -4,11 +4,12 @@ based on the paper "Mathematical models for stable matching problems with ties a
 by Delorme, M., Garcia, S., Gondzio, J., Kalcsics J., Manlove D. & Petterson W.
 
 
-Last Modified: 15.12.2020 - Baturay Yilmaz
+Created by: Baturay Yilmaz 15.12.2020 
+Last modified: Selin Eyupoglu 14.07.2021
 '''
 import time
 from ortools.sat.python import cp_model
-import sys
+import argparse
 
 
 def GenerateRankList(preferencesInLine):
@@ -41,21 +42,22 @@ def GetRankInPrefList(preferredPartnerID, PreferenceList):
 
 
 def main():
-    START_TIME = time.time()
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--file', '-f', metavar='', help='Input file name', type = str)
+    argparser.add_argument('--opt', '-o', metavar='', help='Specify the optimization variant. 0: Max Cardinality, 1: Egalitarian, 2: Sex-Equal', type = int, default=0, choices=[0, 1, 2])
+    args = argparser.parse_args()
 
-
-    # inputFileName = r"testInput.txt"
-    inputFileName = ""
-    if len(sys.argv) == 1:  # in this case there is only sys.argv[0] which the is the name of the python file
+    if not args.file:  # in this case there is only sys.argv[0] which the is the name of the python file
         print("No file name supplied! Program will exit!")
         exit()
     else:
-        inputFileName = sys.argv[1]
+        inputFileName = args.file
 
     f = open(inputFileName, "r")  # Read the input file
     lines = f.readlines()
     f.close()
 
+    START_TIME = time.time()
 
     numberOfMan = int(lines[1])
     numberOfWoman = int(lines[2])
@@ -87,24 +89,13 @@ def main():
 
         WomanList[id - 1] = preferenceList
 
-
-
     ranklessManList = [[partnerID for rankList in ManList[index] for partnerID in rankList] for index in range(len(ManList))] # List of Man with the preferenceLis without rank. It is a 2D version of ManList
     ranklessWomanList = [[partnerID for rankList in WomanList[index] for partnerID in rankList] for index in range(len(WomanList))]
-
-    # print(ManList)
-    # print(ranklessManList)
-    # print(WomanList)
-    # print(ranklessWomanList)
-    # print("\n")
-
 
     m = cp_model.CpModel()
     matching = [[m.NewBoolVar(name="[m"+str(mIndex)+"-w"+str(wIndex)+"]") for wIndex in range(numberOfWoman)] for mIndex in range(numberOfMan)]
     sumMan = m.NewIntVar(lb=0, ub=(numberOfWoman*numberOfWoman + 1), name="sumMan")
     sumWoman = m.NewIntVar(lb=0, ub=(numberOfMan*numberOfMan + 1), name="sumWoman")
-    sumTemp = m.NewIntVar(lb=((numberOfMan*numberOfMan + 1) * -1), ub=(numberOfWoman*numberOfWoman + 1), name="sumTemp")
-    diff = m.NewIntVar(lb=0, ub=max((numberOfWoman*numberOfWoman + 1), (numberOfMan*numberOfMan + 1)), name="diff")
 
     # Adding constraints
     # Acceptability constraint from man point of view
@@ -160,12 +151,21 @@ def main():
 
     m.Add(sumMan == MAN_SUM)
     m.Add(sumWoman == WOMAN_SUM)
-    m.Add(sumTemp == sumMan - sumWoman)
-    m.AddAbsEquality(target=diff, var=sumTemp) # adds constraint -> diff == abs(sumTemp)
-
-    # Objective for Sex-Equal matching
-    m.Minimize(diff)
-
+    
+    if args.opt == 0:
+        # Max Cardinality
+        m.Maximize(sum(matching[i][j] for i in range(numberOfMan) for j in range(numberOfWoman)))
+    if args.opt == 1: 
+        # Objective for Egalitarian matching
+        m.Minimize(sumMan + sumWoman)
+    elif args.opt == 2:
+        sumTemp = m.NewIntVar(lb=((numberOfMan*numberOfMan + 1) * -1), ub=(numberOfWoman*numberOfWoman + 1), name="sumTemp")
+        diff = m.NewIntVar(lb=0, ub=max((numberOfWoman*numberOfWoman + 1), (numberOfMan*numberOfMan + 1)), name="diff")
+        m.Add(sumTemp == sumMan - sumWoman)
+        m.AddAbsEquality(target=diff, var=sumTemp) # adds constraint -> diff == abs(sumTemp)
+        # Objective for Sex-Equal matching
+        m.Minimize(diff)
+ 
     solver = cp_model.CpSolver()
     status = solver.Solve(m)
 
@@ -174,7 +174,12 @@ def main():
         print("Number of Branches:", solver.NumBranches())
         print("Number of Booleans:", solver.NumBooleans())
         print("Number of Conflicts:", solver.NumConflicts())
-        print("Objective Value(Sex-Equal Cost):", solver.ObjectiveValue(), "\n")
+        if args.opt == 0: 
+            print("Objective Value(Max Card):", solver.ObjectiveValue(), "\n")
+        elif args.opt == 1:
+           print("Objective Value(Egalitarian):", solver.ObjectiveValue(), "\n")
+        else:
+           print("Objective Value(Sex Equal):", solver.ObjectiveValue(), "\n")
         print('Solution:')
         for i in range(numberOfMan):
             for j in range(numberOfWoman):
@@ -184,9 +189,7 @@ def main():
         print("No solution found.")
 
 
-
-
-
 if __name__ == '__main__':
     main()
+
 

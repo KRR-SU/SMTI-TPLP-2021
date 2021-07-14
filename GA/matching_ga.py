@@ -1,3 +1,11 @@
+
+import random
+import numpy as np
+import bisect
+import time
+import sys
+import argparse
+
 # -*- coding: utf-8 -*-
 """matching_GA_düzeltme.ipynb
 
@@ -19,12 +27,9 @@ Original file is located at
 """
 Genetic Algorithm implementation based on paper "Two‐Sided Matching with Indifferences: Using Heuristics to Improve Properties of Stable Matchings" by Christian Haas 
 İlayda Begüm İzci-09.12.2020
+
+Last modified: 14/07/2021
 """
-import random
-import numpy as np
-import bisect
-import time
-import sys
 
 
 def randomTieBreaker(preferenceList):
@@ -391,16 +396,20 @@ def genetic_algorithm_stepwise(population, fitness_fn, mpref, wpref, f_thres=Non
 
 
 def main():
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--file', '-f', metavar='', help='Input file name', type = str)
+    args = argparser.parse_args()
     # Read from file
     inputF = ""
-    if len(sys.argv) == 1:  # in this case there is only sys.argv[0] which the is the name of the python file
+    if not args.file:
         print("No file name supplied! Program will exit!")
         exit()
     else:
-        inputF = sys.argv[1]
+        inputF = args.file
 
     with open(inputF) as fp:
         lines = fp.readlines()
+        
     mensize = int(lines[1])
     womensize = int(lines[2])
     menprefDict = {key: [] for key in range(1, int(mensize) + 1)}

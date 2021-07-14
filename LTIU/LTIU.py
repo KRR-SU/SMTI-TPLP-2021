@@ -1,3 +1,10 @@
+import time
+import random
+import sys
+# Needed to hide warnings in the matplotlib sections
+import warnings
+import argparse
+
 # -*- coding: utf-8 -*-
 """LTIU-knuth.ipynb
 
@@ -17,17 +24,7 @@ Last modified: 04.12.2020 - İlayda Begüm İzci
 
 # Commented out IPython magic to ensure Python compatibility.
 # %matplotlib inline
-import time
-import random
-import heapq
-import math
-import sys
-import numpy as np
-from collections import defaultdict, deque, Counter
-from itertools import combinations
-from itertools import permutations
-# Needed to hide warnings in the matplotlib sections
-import warnings
+
 
 warnings.filterwarnings("ignore")
 
@@ -249,12 +246,16 @@ def hill_climbing(problem):
 
 
 def main():
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--file', '-f', metavar='', help='Input file name', type = str)
+    args = argparser.parse_args()
+
     inputF = ""
-    if len(sys.argv) == 1:  # in this case there is only sys.argv[0] which the is the name of the python file
+    if not args.file:  # in this case there is only sys.argv[0] which the is the name of the python file
         print("No file name supplied! Program will exit!")
         exit()
     else:
-        inputF = sys.argv[1]
+        inputF = args.file
 
     with open(inputF) as fp:
         lines = fp.readlines()

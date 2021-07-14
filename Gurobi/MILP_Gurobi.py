@@ -11,6 +11,7 @@ import gurobipy as gp
 from gurobipy import GRB
 import time
 import sys
+import argparse
 
 
 class PreferenceListNode:
@@ -108,15 +109,19 @@ def generateMutuallyUnwantedPairs(ManList, WomanList, numberOfMan, numberOfWoman
 
 
 def main():
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('--file', '-f', metavar='', help='Input file name', type = str)
+    args = argparser.parse_args()
+
     START_TIME = time.time()
 
     # inputFileName = r"TestInputs/input14.txt"
     inputFileName = ""
-    if len(sys.argv) == 1:  # in this case there is only sys.argv[0] which the is the name of the python file
+    if not args.file:  # in this case there is only sys.argv[0] which the is the name of the python file
         print("No file name supplied! Program will exit!")
         exit()
     else:
-        inputFileName = sys.argv[1]
+        inputFileName = args.file
 
     f = open(inputFileName, "r")  # Read the input file
     lines = f.readlines()
