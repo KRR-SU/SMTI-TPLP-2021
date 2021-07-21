@@ -50,7 +50,7 @@ def ASP_inputConverter(inputFile):
 def run_CP(input_path, opt):
     for f in os.listdir(input_path):
         rsname = 'OUTPUT/{}'.format(f.replace('input', 'output').replace('.txt', '_{}_CP.txt'.format(OPTS[opt])))
-        command = "python OR-Tools/OR-Tools_CP.py -o {} -f {}".format(opt + 1, os.path.join(input_path, f))
+        command = "python OR-Tools/OR-Tools_CP.py -o {} -f {}".format(opt + 1, os.path.join(input_path, inputFile))
         retcode, stdout, stderr = subprocessmethodrun.run(command, shell=True, stdout=subprocess.PIPE)
         output = stdout.decode('utf-8')
         with open(rsname, "w") as out:
@@ -60,7 +60,7 @@ def run_CP(input_path, opt):
 def run_MIP(input_path, opt):
     for f in os.listdir(input_path):
         rsname = 'OUTPUT/{}'.format(f.replace('input', 'output').replace('.txt', '_{}_MIP.txt'.format(OPTS[opt])))
-        command = "python OR-Tools/OR-Tools_MIP.py -o {} -f {}".format(opt + 1, os.path.join(input_path, f))
+        command = "python OR-Tools/OR-Tools_MIP.py -o {} -f {}".format(opt + 1, os.path.join(input_path, inputFile))
         retcode, stdout, stderr = subprocessmethodrun.run(command, shell=True, stdout=subprocess.PIPE)
         output = stdout.decode('utf-8')
         with open(rsname, "w") as out:
