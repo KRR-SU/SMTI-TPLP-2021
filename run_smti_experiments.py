@@ -49,8 +49,8 @@ def ASP_inputConverter(inputFile):
 def run_cmodels(input_path):
     for f in os.listdir(input_path):
         ASP_inputConverter(os.path.join(input_path, f))
-        rsname = 'OUTPUT/{}'.format(f.replace('input', 'output').replace('.txt', '_smti_cmodels.txt'))
-        command = "gringo smti_lparse.lp input_ASP.lp | timeout -t 2000 -m 2000000 cmodels -zc -statistics"
+        rsname = 'OUTPUT/{}'.format(f.replace('input', 'output').replace('.txt', '_SMTI_SAT.txt'))
+        command = "gringo ASP/smti_lparse.lp input_ASP.lp | timeout -t 2000 -m 2000000 cmodels -zc -statistics"
         retcode, stdout, stderr = subprocessmethodrun.run(command, shell=True, stdout=subprocess.PIPE)
         output = stdout.decode('utf-8')
         with open(rsname, "w") as out:
@@ -60,7 +60,7 @@ def run_cmodels(input_path):
 def run_clingo(input_path):
     for f in os.listdir(input_path):
         ASP_inputConverter(os.path.join(input_path, f))
-        rsname = 'OUTPUT/{}'.format(f.replace('input', 'output').replace('.txt','_smti_clingo.txt'))
+        rsname = 'OUTPUT/{}'.format(f.replace('input', 'output').replace('.txt','_SMTI_CLINGO.txt'))
         command = "clingo --stats input_ASP.lp Clingo/smti.lp  --time-limit=2000"
         retcode, stdout, stderr = subprocessmethodrun.run(command, shell=True, stdout=subprocess.PIPE)
         output = stdout.decode('utf-8')

@@ -70,7 +70,7 @@ def run_MIP(input_path, opt):
 def run_clingo(input_path, opt):
     for f in os.listdir(input_path):
         ASP_inputConverter(os.path.join(input_path, f))
-        rsname = 'OUTPUT/{}'.format(f.replace('input', 'output').replace('.txt', '_{}_clingo.txt'.format(OPTS[opt])))
+        rsname = 'OUTPUT/{}'.format(f.replace('input', 'output').replace('.txt', '_{}_CLINGO.txt'.format(OPTS[opt])))
         command = "clingo --stats input_ASP.lp Clingo/smti.lp Clingo/{}.lp --time-limit=2000".format(OPTS[opt])
         retcode, stdout, stderr = subprocessmethodrun.run(command, shell=True, stdout=subprocess.PIPE)
         output = stdout.decode('utf-8')

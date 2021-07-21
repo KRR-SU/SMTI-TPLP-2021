@@ -79,7 +79,7 @@ def solve(root, inputFile, outputFilesPath, dictKey, solverType):
         cmd = "python3 LTIU/LTIU.py " + os.path.join(root, inputFile)
     elif solverType == 3:
         cmd = "clingo -V Clingo/smti.lp Clingo/maxcardinality.lp input_ASP.lp --stats"
-        ASP_inputConverter(inputFile)
+        ASP_inputConverter(os.path.join(root, inputFile))
     elif solverType == 4:
         cmd =  "python OR-Tools/OR-Tools_CP-SAT.py " + os.path.join(root, inputFile)
     elif solverType == 5:
@@ -97,8 +97,6 @@ def solve(root, inputFile, outputFilesPath, dictKey, solverType):
         outputFile.write("Solver reached to a timeout limit.")
         outputFile.close()
 
-        STATS[solverType][dictKey]["NUMBER_OF_TIMEOUTS_REACHED"] += 1
-
     else:  # Process is finished. subPro has a value (which has the stdout of the solver)
         # So gurobiSolver will print to console(stdout) ... TotalTime: 112s \n NumberOfExpandedNode: 10 \n ...
         processOutput = subPro.stdout.decode('utf-8')
@@ -106,9 +104,10 @@ def solve(root, inputFile, outputFilesPath, dictKey, solverType):
         processOutput = processOutput.split("\n", 2)[2]  # Getting rid of Gurobi information in the begining of the output.
         
         # Writing the output to the file
-        outputFileName = inputFile.split('/')[1].replace("input", "output")[:-4] + "_{}.txt".format(solvers[solverType - 1])
+        outputFileName = inputFile.replace("input", "output")[:-4] + "_{}.txt".format(solvers[solverType - 1])
         outputFile = open(os.path.join(outputFilesPath, outputFileName), "w")
         outputFile.write(processOutput)
+        print(outputFileName)
         outputFile.close()
 
 def main():
@@ -147,8 +146,6 @@ def main():
 
             Dictionary_Key = instance_size + "_" + p1 + "_" + p2
             
-            inputFile = '{}/{}'.format(PATH_TO_INPUT_FILES, inputFile)
-
             if selectedSolver == -1:
                 solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, 1)
                 solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, 2)
