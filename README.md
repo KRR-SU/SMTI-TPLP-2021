@@ -53,9 +53,9 @@ Under '/Clingo' directory we provide logic programs that solve SMTI (smti.lp) an
 
 * Sample Usage 
     - For solving an SMTI problem: \
-      ``` clingo input.lp smti.lp ```  
+      ```clingo input.lp smti.lp```  
   - For solving optimization variants, specify the logic program of the variant of choice such as: \
-     ``` clingo input.lp smti.lp maxcardinality.lp``` 
+     ```clingo input.lp smti.lp maxcardinality.lp``` 
 
 ## Gurobi
 
@@ -67,7 +67,7 @@ Under '/Gurobi' we provide our ILP implementation to solve Max Card SMTI.
 
 * Sample Usage 
     -  For solving Max Cardinality SMTI: \
-    ``` python3 MILP_Gurobi.py -f input.txt ``` 
+    ```python3 MILP_Gurobi.py -f input.txt``` 
            
 
 ## LTIU
@@ -76,7 +76,7 @@ Under '/LTIU' we provide our ILP implementation to solve Max Card SMTI.
 
 * Sample Usage 
     - For solving Max Cardinality SMTI: \
-    ``` python3 LTIU.py -f input.txt ``` 
+    ```python3 LTIU.py -f input.txt``` 
            
 
 ## GA 
@@ -85,7 +85,7 @@ Under '/GA' we provide our ILP implementation to solve Max Card SMTI.
 
 * Sample Usage 
    - To solve Max Cardinality SMTI, run \
-    ```python3 matching_ga.py -f input.txt ``` 
+    ```python3 matching_ga.py -f input.txt``` 
            
 ## OR-Tools 
    * Prerequisites
@@ -100,7 +100,7 @@ Under '/GA' we provide our ILP implementation to solve Max Card SMTI.
    - 2: Sex-Equal
 
    * To use CP model, run \
-        ```python3 OR-Tools_CP.py -f input.txt -opt <i> ``` where i is the integer specifying the variant.
+        ```python3 OR-Tools_CP.py -f input.txt -opt <i>``` where i is the integer specifying the variant.
       
    * To use MIP, run \
       ``` python3 OR-Tools_MIP.py -f input.txt -opt <i>``` 
