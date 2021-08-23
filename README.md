@@ -84,8 +84,8 @@ Under '/LTIU' we provide our ILP implementation to solve Max Card SMTI.
 Under '/GA' we provide our ILP implementation to solve Max Card SMTI.  
 
 * Sample Usage 
-   - For solving Max Cardinality SMTI:  
-    ``` python3 matching_ga.py -f input.txt ``` 
+   - To solve Max Cardinality SMTI, run \
+    ```python3 matching_ga.py -f input.txt ``` 
            
 ## OR-Tools 
    * Prerequisites
@@ -99,8 +99,24 @@ Under '/GA' we provide our ILP implementation to solve Max Card SMTI.
    - 1: Egalitarian
    - 2: Sex-Equal
 
-   * To use CP model,  \
-        ``` python3 OR-Tools_CP.py -f input.txt -opt <i> ``` where i is the integer specifying the variant.
+   * To use CP model, run \
+        ```python3 OR-Tools_CP.py -f input.txt -opt <i> ``` where i is the integer specifying the variant.
       
-   * To use MIP, \
+   * To use MIP, run \
       ``` python3 OR-Tools_MIP.py -f input.txt -opt <i>``` 
+
+## SAT-E
+   We thank Andrew Perrault for kindly sharing their implementation of the SAT formulation to solve SMP-C. 
+   We have adapted their SAT formulation to solve SMTI.
+
+   * Prerequisites
+      - SAT solver lingeling must be installed. \
+            see: http://fmv.jku.at/lingeling/
+
+  The environment variable SAT_SOLVER_PATH should be set to the path to lingeling.
+
+  * To use SAT-E, run \
+      ```python3 smti.py input.txt```
+
+  * Output will be written to a file with random suffix. Output file name can be specified by -o argument. First line of the output represents the matching number, 'm 1' reads as 'Matching 1'. Starting from the second line, each line represents a pair, first id represents the man and second id represents his partner.
+
