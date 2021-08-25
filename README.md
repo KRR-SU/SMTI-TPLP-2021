@@ -1,5 +1,15 @@
 # SMTI
-We provide implementations of ILP, CP, ASP and Local Search approaches to solve Stable Marriage with ties and incomplete lists(SMTI), and its optimization variants, and benchmark instances with n=50 and n=100.
+We study a variation of the Stable Marriage problem, where every man and every woman express their preferences as preference lists which may be incomplete and contain ties. This problem is called the Stable Marriage problem with Ties and Incomplete preferences (SMTI).  We consider three optimization variants of SMTI: Max Cardinality, Sex-Equal and Egalitarian. 
+
+We empirically compare the following methods to solve these three hard variants: Answer Set Programming (ASP), Constraint Programming (CP), Integer Linear Programming (ILP). For Max Cardinality, we compare these methods with Local Search methods as well.  We also empirically compare ASP with Propositional Satisfiability, for SMTI instances. 
+
+The experimental setup, evaluation and results are summarized in the following article:
+
+Stable Marriage Problems with Ties and Incomplete Preferences: An Empirical Comparison of ASP, SAT, ILP, CP, and Local Search Methods
+Selin Eyupoglu, Muge Fidan, Yavuz Gulesen, Ilayda Begum Izci, Berkan Teber, Baturay Yilmaz, Ahmet Alkan, Esra Erdem 
+https://arxiv.org/abs/2108.05165
+
+This repository contains the implementations of ASP, SAT, ILP, CP, and Local Search Methods, and the benchmark instances used in this study.
 
 ## Input format
 
@@ -59,7 +69,7 @@ Under '/Clingo' directory we provide logic programs that solve SMTI (smti.lp) an
 
 ## Gurobi
 
-Under '/Gurobi' we provide our ILP implementation to solve Max Card SMTI.  
+Under '/Gurobi' we provide our implementation of the ILP model introduced by Kwanashie and Manlove (2014) to solve Max Card SMTI.  
 
 * Preliminaries <br />
     - gurobipy must be installed.  \
@@ -72,7 +82,7 @@ Under '/Gurobi' we provide our ILP implementation to solve Max Card SMTI.
 
 ## LTIU
 
-Under '/LTIU' we provide our ILP implementation to solve Max Card SMTI.  
+Under '/LTIU' we provide our implementation of the algorithm proposed by Gelain et al. (2013) to solve Max Card SMTI.  
 
 * Sample Usage 
     - For solving Max Cardinality SMTI: \
@@ -81,13 +91,16 @@ Under '/LTIU' we provide our ILP implementation to solve Max Card SMTI.
 
 ## GA 
 
-Under '/GA' we provide our ILP implementation to solve Max Card SMTI.  
+Under '/GA' we provide our implementation of the algorithm proposed by Haas (2020) to solve Max Card SMTI.  
 
 * Sample Usage 
    - To solve Max Cardinality SMTI, run \
     ```python3 matching_ga.py -f input.txt ``` 
            
 ## OR-Tools 
+
+  Under '/OR-Tools' we provide our implementation of the ILP model proposed by Kwanashie and Manlove (2014) and implementation of our CP model to solve Max Card SMTI.
+
    * Prerequisites
        - For CP, OR-Tools CP SAT solver must be installed. \
             see: https://developers.google.com/optimization/cp/cp_solver
@@ -106,8 +119,8 @@ Under '/GA' we provide our ILP implementation to solve Max Card SMTI.
       ``` python3 OR-Tools_MIP.py -f input.txt -opt <i>``` 
 
 ## SAT-E
-   We thank Andrew Perrault for kindly sharing their implementation of the SAT formulation to solve SMP-C. 
-   We have adapted their SAT formulation to solve SMTI.
+
+   We have adapted the SAT formulation introduced by Drummond et al. (2015) to solve SMTI.
 
    * Prerequisites
       - SAT solver lingeling must be installed. \
@@ -120,3 +133,6 @@ Under '/GA' we provide our ILP implementation to solve Max Card SMTI.
 
   * Output will be written to a file with random suffix. Output file name can be specified by -o argument. First line of the output represents the matching number, 'm 1' reads as 'Matching 1'. Starting from the second line, each line represents a pair, first id represents the man and second id represents his partner.
 
+
+## Acknowledgments
+ We would like to thank Ian Gent, David Manlove, Andrew Perrault, William Pettersson and Patrick Prosser for useful discussions and suggestions, and sharing their software with us. 
