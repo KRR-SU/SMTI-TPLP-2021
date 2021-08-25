@@ -60,20 +60,12 @@ class Instance:
         
         # ADD CONSTRAINTS
         # pairs should be acceptable
-        # acceptability constraint from man point of view. man wants the woman but woman does not want that man
-        for i in range(self.numberOfMan):  # i is man index, i+1 is the man ID
-             for k in range(self.numberOfWoman):
-                 lis = [item for sl in list(self.manList[i].values()) for item in sl]
-                 if k+1 not in lis:
-                     solver.Add(matching[i][k] == 0)
-
-        # # acceptability constraint from woman point of view. woman wants the man but man does not want that woman
-        for k in range(self.numberOfWoman):  # i is man index, i+1 is the man ID
-            for i in range(self.numberOfMan):
-                lis = [item for sl in list(self.womanList[k].values()) for item in sl]
-                if i+1 not in lis:
+        for i in range(self.numberOfMan):
+            for k in range(self.numberOfWoman):
+                mlis = [item for sl in list(self.manList[i].values()) for item in sl]
+                wlis = [item for sl in list(self.womanList[k].values()) for item in sl]
+                if (k+1 not in mlis) or (i+1 not in wlis):
                     solver.Add(matching[i][k] == 0)
-
 
         # # man or woman cannot be matched multiple times
         for i in range(self.numberOfMan):  # or we could use numberOfWoman does not matter since they are equal

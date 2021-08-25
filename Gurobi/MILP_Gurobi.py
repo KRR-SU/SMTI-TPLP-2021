@@ -66,28 +66,12 @@ class Instance:
         
 
         # ADD CONSTRAINTS
-        # pairs should be acceptable
-        # acceptability constraint from man point of view. man wants the woman but woman does not want that man
-        for i in range(self.numberOfMan):  # i is man index, i+1 is the man ID
-             for k in range(self.numberOfWoman):
-                 lis = [item for sl in list(self.manList[i].values()) for item in sl]
-                 if k+1 not in lis:
-                     m.addConstr(matching[i][k] == 0)
-
-        # # acceptability constraint from woman point of view. woman wants the man but man does not want that woman
-        for k in range(self.numberOfWoman):  # i is man index, i+1 is the man ID
-            for i in range(self.numberOfMan):
-                lis = [item for sl in list(self.womanList[k].values()) for item in sl]
-                if i+1 not in lis:
+        for i in range(self.numberOfMan):
+            for k in range(self.numberOfWoman):
+                mlis = [item for sl in list(self.manList[i].values()) for item in sl]
+                wlis = [item for sl in list(self.womanList[k].values()) for item in sl]
+                if (k+1 not in mlis) or (i+1 not in wlis):
                     m.addConstr(matching[i][k] == 0)
-
-        # acceptability constraint. when no one wants each other. i.e, man does not want that woman and that woman does not want that man
-        # unwantedList = generateMutuallyUnwantedPairs(ManList, WomanList, numberOfMan, numberOfWoman)
-        # for i in range(0, len(unwantedList)):
-        #     manID = unwantedList[i][0]
-        #     womanID = unwantedList[i][1]
-        #     m.addConstr(matching[manID - 1, womanID - 1] == 0,
-        #                 name="Acceptable pair: woman " + str(womanID) + " with man " + str(manID))
 
         # # man or woman cannot be matched multiple times
         for i in range(self.numberOfMan):  # or we could use numberOfWoman does not matter since they are equal
@@ -95,6 +79,7 @@ class Instance:
                          name="rowMan" + str(i))  # each man can be matched with at most 1 woman
              m.addConstr(sum([row[i] for row in matching]) <= 1,
                          name="colWoman" + str(i))  # each woman can be matched with at most 1 man
+
         # # stability constraint
         for i in range(self.numberOfMan):  # for each man
             preferencesOfMan = self.manList[i]
@@ -196,44 +181,12 @@ def main():
 
         WomanList[id - 1] = preferenceList
 
-
-    # print(ManList)
-    # print("\n")
-    # print(WomanList)
-    # print("\n")
-
     try:
         i = Instance(ManList, WomanList)
         m,matching = i.createModel(args.opt)
         m.optimize()
         end = time.time()
         print('Run time:' + str(end-start))
-        #print("Run time:", time.time() - START_TIME)
-        #print("Number of iterations:", m.IterCount) # Number of simplex iterations performed in most recent optimization
-        # print("Number of nodes explored:", m.NodeCount) # Number of branch-and-cut nodes explored in most recent optimization
-        #print("Number of non-zero coefficients in constraint matrix:", m.NumNZs)  # NumConstrs = Number of linear constraints | NumNZs = Number of non-zero coefficients in the constraint matrix
-
-
-        # print("\nModel Runtime for Optimization: ", m.Runtime, "\n")
-
-        # m.write('output.lp')
-
-        # nSolutions = m.SolCount
-        # print("\nNumber of solutions found: " + str(nSolutions) + "\n")
-        # # PRINTING ALL SOLUTIONS
-        # for a in range(0, nSolutions):
-        #     print("--------------")
-        #     print("Solution - " + str(a+1))
-        #     m.setParam(GRB.Param.SolutionNumber, a)
-        #     print("Matching Matrix:")
-        #     print(matching.Xn)
-        #     print("Max Cardinality: %g" % m.objVal)
-        #
-        #     print("\nSOLUTION:")
-        #     for i in range(0, numberOfMan):
-        #         for j in range(0, numberOfWoman):
-        #             if matching.Xn[i, j] == 1:
-        #                 print("m" + str(i+1) + "-" + "w" + str(j+1))
 
         # PRINTING SINGLE SOLUTION
         print("\n\nMatching Matrix:")
