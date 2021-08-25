@@ -11,34 +11,117 @@ from ortools.linear_solver import pywraplp
 import argparse
 
 
+
+class Instance:
+    def __init__(self, manList, womanList):
+        self.manList = [None] * len(manList)
+        
+        for idx, m in enumerate(manList):
+            rank = 1
+            lw = {}
+            for key in m:
+                lw[rank] = [int(el) for el in key.split(' ')]
+                rank += 1
+            self.manList[idx] = lw
+        
+        self.womanList = [None] * len(womanList)
+
+        for idx, m in enumerate(womanList):
+            rank = 1
+            lw = {}
+            for key in m:
+                lw[rank] = [int(el) for el in key.split(' ')]
+                rank += 1
+            self.womanList[idx] = lw
+
+        self.numberOfMan = len(manList)
+        self.numberOfWoman = len(womanList)
+
+    def isManInWomanList(self, manID, womanID):
+        womanPreferences = self.womanList[womanID - 1]
+        for key in womanPreferences:
+            if manID in womanPreferences[key]:
+                return True, key
+
+        return False, 0
+
+    def isWomanInManList(self, manID, womanID):
+        manPreferences = self.manList[manID - 1]
+        for key in manPreferences:
+            if womanID in manPreferences[key]:
+                return True, key
+
+        return False, 0
+
+    def createModel(self, opt):
+        # CREATE EMPTY MODEL
+        solver = pywraplp.Solver.CreateSolver('CP-SAT')
+        matching = [[solver.BoolVar(name="[m" + str(mIndex) + "-w" + str(wIndex) + "]") for wIndex in range(self.numberOfWoman)] for mIndex in range(self.numberOfMan)]
+        
+        # ADD CONSTRAINTS
+        # pairs should be acceptable
+        # acceptability constraint from man point of view. man wants the woman but woman does not want that man
+        for i in range(self.numberOfMan):  # i is man index, i+1 is the man ID
+             for k in range(self.numberOfWoman):
+                 lis = [item for sl in list(self.manList[i].values()) for item in sl]
+                 if k+1 not in lis:
+                     solver.Add(matching[i][k] == 0)
+
+        # # acceptability constraint from woman point of view. woman wants the man but man does not want that woman
+        for k in range(self.numberOfWoman):  # i is man index, i+1 is the man ID
+            for i in range(self.numberOfMan):
+                lis = [item for sl in list(self.womanList[k].values()) for item in sl]
+                if i+1 not in lis:
+                    solver.Add(matching[i][k] == 0)
+
+
+        # # man or woman cannot be matched multiple times
+        for i in range(self.numberOfMan):  # or we could use numberOfWoman does not matter since they are equal
+            solver.Add(sum(matching[i][:]) <= 1)  # each man can be matched with at most 1 woman
+            solver.Add(sum([row[i] for row in matching]) <= 1)  # each woman can be matched with at most 1 man
+
+        # # stability constraint
+        for i in range(self.numberOfMan):  # for each man
+            preferencesOfMan = self.manList[i]
+            for j in preferencesOfMan:
+                for k in preferencesOfMan[j]:
+                    womanList = [preferencesOfMan[m] for m in preferencesOfMan if m <= j]  # list of woman who has same or smaller(better) rank in i's preference list.
+                    flat_woman_list = [item for sl in womanList for item in sl]
+                    left = sum([matching[i][wID - 1] for wID in flat_woman_list])
+                    if self.isManInWomanList(i + 1, k)[0]:  # if man is not in woman's preference list than that pair cannot block.
+                        manList = [self.womanList[k-1][m] for m in self.womanList[k-1] if m <= self.isManInWomanList(i + 1, k)[1]]  # list of woman who has same or smaller(better) rank in i's preference list.
+                        flat_man_list = [item for sl in manList for item in sl]
+                        right = sum([matching[mID - 1][k - 1] for mID in flat_man_list])
+                        solver.Add(1 - left <= right)
+
+        if opt == 0:
+           # Max Cardinality
+           solver.Maximize(sum([matching[i][j] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)]))
+        elif opt == 1:
+            # Egalitarian
+            solver.Minimize(sum(matching[i][j] * (self.isWomanInManList(i+1, j+1)[1] + self.isManInWomanList(i+1, j+1)[1]) for i in range(self.numberOfMan) for j in range(self.numberOfWoman)))
+        elif opt == 2:
+            # Sex Equal
+            z = solver.IntVar(0, 500, 'z')
+            solver.Add(z >= sum(matching[i][j] * self.isWomanInManList(i+1, j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)) - sum(matching[i][j] * self.isManInWomanList(i+1, j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)))
+            solver.Add(z >= -(sum(matching[i][j] * self.isWomanInManList(i+1,j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)) - sum(matching[i][j] * self.isManInWomanList(i+1, j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman))))
+            solver.Minimize(z)
+
+        return solver, matching
+
 def GenerateRankList(preferencesInLine):
     # it will get preferences in input file and convert it into a ranked list so that we can put the ranks in the preference list
     result = []
 
     while len(preferencesInLine) != 0:
-        element = preferencesInLine[preferencesInLine.find("(") + 1: preferencesInLine.find(")")]
+        leftPar = "("
+        rightPar = ")"
 
-        # typecasting the preference ID to an int
-        element = element.split(" ")
-        for i in range(len(element)):
-            element[i] = int(element[i])
-
+        element = preferencesInLine[preferencesInLine.find(leftPar) + 1: preferencesInLine.find(rightPar)]
         result.append(element)
 
-        preferencesInLine = preferencesInLine[preferencesInLine.find(")") + 1:]
+        preferencesInLine = preferencesInLine[preferencesInLine.find(rightPar) + 1:]
     return result
-
-
-def GetRankInPrefList(preferredPartnerID, PreferenceList):
-    # PreferenceList is a 2D list. [[x,y], [z]] denotes that id x and y are the first preference and z is the second
-    # preferredPartnerID is the ID that we should check if it exists in the PreferenceList
-    # This function will return the rank of the preferredPartnerID in the given PreferenceList, if the preferredPartnerID is not in PreferenceList it will return -1
-    for rank in range(len(PreferenceList)):
-        for ID in PreferenceList[rank]:
-            if ID == preferredPartnerID:
-                return rank
-    return -1
-
 
 def main():
     argparser = argparse.ArgumentParser()
@@ -46,7 +129,7 @@ def main():
     argparser.add_argument('--opt', '-o', metavar='', help='Specify the optimization variant. 0: Max Cardinality, 1: Egalitarian, 2: Sex-Equal', type = int, default=0, choices=[0, 1, 2])
     args = argparser.parse_args()
 
-    START_TIME = time.time()
+    start = time.time()
 
     if not args.file:  # in this case there is only sys.argv[0] which the is the name of the python file
         print("No file name supplied! Program will exit!")
@@ -60,7 +143,7 @@ def main():
 
     numberOfMan = int(lines[1])
     numberOfWoman = int(lines[2])
-
+   
     ManList = [None] * numberOfMan  # np.empty(numberOfMan, dtype=object)
     WomanList = [None] * numberOfWoman  # np.empty(numberOfWoman, dtype=object)
 
@@ -87,71 +170,13 @@ def main():
         # rankList will have a value ['x y z'] or ['x', 'y', 'z'] or ['x y', 'z']. Each of this ids in indices of this list will be their rank in preference list
 
         WomanList[id - 1] = preferenceList
-
-    ranklessManList = [[partnerID for rankList in ManList[index] for partnerID in rankList] for index in range(len(ManList))] # List of Man with the preferenceLis without rank. It is a 2D version of ManList
-    ranklessWomanList = [[partnerID for rankList in WomanList[index] for partnerID in rankList] for index in range(len(WomanList))]
-
     # Create the mip solver with the SCIP backend.
-    solver = pywraplp.Solver.CreateSolver('SCIP')
-    matching = [[solver.BoolVar(name="[m" + str(mIndex) + "-w" + str(wIndex) + "]") for wIndex in range(numberOfWoman)] for mIndex in range(numberOfMan)]
-    z = solver.IntVar(0, 500, 'z')
-    # Adding constraints
-    for i in range(0, numberOfMan):  # i is man index, i+1 is the man ID
-        ranklessPreferencesOfMan = ranklessManList[i]
-        nonPreferredWomanIDs = list(set([i for i in range(1, numberOfWoman+1)]) - set(ranklessPreferencesOfMan)) # woman IDs that are not preferred by man with index i (id i +1)
-        for womanID in nonPreferredWomanIDs:
-            solver.Add(matching[i][womanID - 1] == 0)
-
-    for i in range(0, numberOfWoman):  # woman with index i (id i +1)
-        ranklessPreferencesOfWoman = ranklessWomanList[i]
-        nonPreferredManIDs = list(set([i for i in range(1, numberOfMan + 1)]) - set(ranklessPreferencesOfWoman))  # man IDs that are not preferred by woman with index i (id i +1)
-        for manID in nonPreferredManIDs:
-            solver.Add(matching[manID - 1][i] == 0)
-
-    for i in range(numberOfMan):  # or we could use numberOfWoman does not matter since they are equal
-        solver.Add(sum(matching[i][:]) <= 1)  # each man can be matched with at most 1 woman
-        solver.Add(sum([row[i] for row in matching]) <= 1)  # each woman can be matched with at most 1 man
-        # [row[i] for row in matching] gets the column with index i
-
-    for i in range(0, numberOfMan):  # for each man
-        preferenceListOfMan = ManList[i]
-
-        for rank in range(len(preferenceListOfMan)):
-            for j in preferenceListOfMan[rank]:
-                # womanID = j
-                womanList = [wID for r in range(rank + 1) for wID in preferenceListOfMan[r]] # list of woman who has same or smaller(better) rank in man with index i's preference list.
-                left = 0
-                for q in range(len(womanList)):
-                    wID = womanList[q]
-                    left += matching[i][wID - 1]
-
-                rankOfManIn_j = GetRankInPrefList(i+1, WomanList[j-1])
-                if rankOfManIn_j != -1: # Checks if the man with id i+1 is in woman with id j's pref list. if man with id i+1 is not in the list of woman with id j, they cannot be a blocking pair.
-
-                    manList = [mID for r in range(rankOfManIn_j+1) for mID in WomanList[j-1][r]] # list of man who has same or smaller(better) rank in j's(womanID's) preference list
-                    right = 0
-                    for p in range(len(manList)):
-                        mID = manList[p]
-                        right += matching[mID - 1][j - 1]
-                    solver.Add(1 - left <= right)
-
-    if args.opt == 0:
-        # Max Cardinality
-        solver.Maximize(sum(matching[i][j] for i in range(numberOfMan) for j in range(numberOfWoman)))
-    elif args.opt == 1:
-        # Egalitarian
-        solver.Minimize(sum(matching[i][j-1] * GetRankInPrefList(j, ManList[i]) for i in range(numberOfMan) for j in range(1, numberOfWoman+1)) + \
-                    sum(matching[i-1][j] * GetRankInPrefList(i, WomanList[j]) for i in range(1, numberOfMan+1) for j in range(numberOfWoman)))
-    elif args.opt == 2:
-        # Sex Equal
-        solver.Add(z >= sum(matching[i][j-1] * GetRankInPrefList(j, ManList[i]) for i in range(numberOfMan) for j in range(1, numberOfWoman+1)) - sum(matching[i-1][j] * GetRankInPrefList(i, WomanList[j]) for i in range(1, numberOfMan+1) for j in range(numberOfWoman)))
-        solver.Add(z >= -(sum(matching[i][j-1] * GetRankInPrefList(j, ManList[i]) for i in range(numberOfMan) for j in range(1, numberOfWoman+1)) - sum(matching[i-1][j] * GetRankInPrefList(i, WomanList[j]) for i in range(1, numberOfMan+1) for j in range(numberOfWoman))))
-        solver.Minimize(z)
-
+    i = Instance(ManList, WomanList)
+    solver, matching = i.createModel(args.opt)
     status = solver.Solve()
-
+    
     if status == pywraplp.Solver.OPTIMAL:
-        print("Execution Time:", time.time() - START_TIME)
+        print("Execution Time:", time.time() - start)
         print("Optimal Val:", solver.Objective().Value(), "\n")
         print('Solution:')
         for i in range(numberOfMan):
