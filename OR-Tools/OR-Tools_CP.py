@@ -11,11 +11,10 @@ from ortools.sat.python import cp_model
 import argparse
 
 
-
 class Instance:
     def __init__(self, manList, womanList):
         self.manList = [None] * len(manList)
-        
+
         for idx, m in enumerate(manList):
             rank = 1
             lw = {}
@@ -23,7 +22,7 @@ class Instance:
                 lw[rank] = [int(el) for el in key.split(' ')]
                 rank += 1
             self.manList[idx] = lw
-        
+
         self.womanList = [None] * len(womanList)
 
         for idx, m in enumerate(womanList):
@@ -57,10 +56,9 @@ class Instance:
         # CREATE EMPTY MODEL
         m = cp_model.CpModel()
         matching = [[m.NewBoolVar(name="[m" + str(mIndex) + "-w" + str(wIndex) + "]") for wIndex in range(self.numberOfWoman)] for mIndex in range(self.numberOfMan)]
-        
+
         # ADD CONSTRAINTS
         # pairs should be acceptable
-        # acceptability constraint from man point of view. man wants the woman but woman does not want that man
         for i in range(self.numberOfMan):
             for k in range(self.numberOfWoman):
                 mlis = [item for sl in list(self.manList[i].values()) for item in sl]
@@ -68,12 +66,12 @@ class Instance:
                 if (k+1 not in mlis) or (i+1 not in wlis):
                     m.Add(matching[i][k] == 0)
 
-
-        # # man or woman cannot be matched multiple times
+        # man or woman cannot be matched multiple times
         for i in range(self.numberOfMan):  # or we could use numberOfWoman does not matter since they are equal
-             m.Add(sum(matching[i][:]) <= 1)  # each man can be matched with at most 1 woman
-             m.Add(sum([row[i] for row in matching]) <= 1)  # each woman can be matched with at most 1 man
-        # # stability constraint
+            m.Add(sum(matching[i][:]) <= 1)  # each man can be matched with at most 1 woman
+            m.Add(sum([row[i] for row in matching]) <= 1)  # each woman can be matched with at most 1 man
+
+        # stability constraint
         for i in range(self.numberOfMan):  # for each man
             preferencesOfMan = self.manList[i]
             for j in preferencesOfMan:
@@ -88,8 +86,8 @@ class Instance:
                         m.Add(1 - left <= right)
 
         if opt == 0:
-             # Max Cardinality
-             m.Maximize(sum(matching[i][j] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)))
+            # Max Cardinality
+            m.Maximize(sum(matching[i][j] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)))
         elif opt == 1:
             # Egalitarian
             m.Minimize(sum(matching[i][j] * (self.isWomanInManList(i+1, j+1)[1] + self.isManInWomanList(i+1, j+1)[1]) for i in range(self.numberOfMan) for j in range(self.numberOfWoman)))
@@ -101,6 +99,7 @@ class Instance:
             m.Minimize(z)
 
         return m, matching
+
 
 def GenerateRankList(preferencesInLine):
     # it will get preferences in input file and convert it into a ranked list so that we can put the ranks in the preference list
@@ -115,6 +114,7 @@ def GenerateRankList(preferencesInLine):
 
         preferencesInLine = preferencesInLine[preferencesInLine.find(rightPar) + 1:]
     return result
+
 
 def main():
     argparser = argparse.ArgumentParser()

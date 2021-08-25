@@ -11,11 +11,10 @@ from ortools.linear_solver import pywraplp
 import argparse
 
 
-
 class Instance:
     def __init__(self, manList, womanList):
         self.manList = [None] * len(manList)
-        
+
         for idx, m in enumerate(manList):
             rank = 1
             lw = {}
@@ -23,7 +22,7 @@ class Instance:
                 lw[rank] = [int(el) for el in key.split(' ')]
                 rank += 1
             self.manList[idx] = lw
-        
+
         self.womanList = [None] * len(womanList)
 
         for idx, m in enumerate(womanList):
@@ -56,8 +55,9 @@ class Instance:
     def createModel(self, opt):
         # CREATE EMPTY MODEL
         solver = pywraplp.Solver.CreateSolver('CP-SAT')
-        matching = [[solver.BoolVar(name="[m" + str(mIndex) + "-w" + str(wIndex) + "]") for wIndex in range(self.numberOfWoman)] for mIndex in range(self.numberOfMan)]
-        
+        matching = [[solver.BoolVar(name="[m" + str(mIndex) + "-w" + str(wIndex) + "]") 
+                     for wIndex in range(self.numberOfWoman)] for mIndex in range(self.numberOfMan)]
+
         # ADD CONSTRAINTS
         # pairs should be acceptable
         for i in range(self.numberOfMan):
@@ -87,19 +87,22 @@ class Instance:
                         solver.Add(1 - left <= right)
 
         if opt == 0:
-           # Max Cardinality
-           solver.Maximize(sum([matching[i][j] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)]))
+            # Max Cardinality
+            solver.Maximize(sum([matching[i][j] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)]))
         elif opt == 1:
             # Egalitarian
             solver.Minimize(sum(matching[i][j] * (self.isWomanInManList(i+1, j+1)[1] + self.isManInWomanList(i+1, j+1)[1]) for i in range(self.numberOfMan) for j in range(self.numberOfWoman)))
         elif opt == 2:
             # Sex Equal
             z = solver.IntVar(0, 500, 'z')
-            solver.Add(z >= sum(matching[i][j] * self.isWomanInManList(i+1, j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)) - sum(matching[i][j] * self.isManInWomanList(i+1, j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)))
-            solver.Add(z >= -(sum(matching[i][j] * self.isWomanInManList(i+1,j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)) - sum(matching[i][j] * self.isManInWomanList(i+1, j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman))))
+            solver.Add(z >= sum(matching[i][j] * self.isWomanInManList(i+1, j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman))
+                       - sum(matching[i][j] * self.isManInWomanList(i+1, j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman)))
+            solver.Add(z >= -(sum(matching[i][j] * self.isWomanInManList(i+1,j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman))
+                       - sum(matching[i][j] * self.isManInWomanList(i+1, j+1)[1] for i in range(self.numberOfMan) for j in range(self.numberOfWoman))))
             solver.Minimize(z)
 
         return solver, matching
+
 
 def GenerateRankList(preferencesInLine):
     # it will get preferences in input file and convert it into a ranked list so that we can put the ranks in the preference list
@@ -114,6 +117,7 @@ def GenerateRankList(preferencesInLine):
 
         preferencesInLine = preferencesInLine[preferencesInLine.find(rightPar) + 1:]
     return result
+
 
 def main():
     argparser = argparse.ArgumentParser()
@@ -135,7 +139,7 @@ def main():
 
     numberOfMan = int(lines[1])
     numberOfWoman = int(lines[2])
-   
+
     ManList = [None] * numberOfMan  # np.empty(numberOfMan, dtype=object)
     WomanList = [None] * numberOfWoman  # np.empty(numberOfWoman, dtype=object)
 
@@ -166,7 +170,7 @@ def main():
     i = Instance(ManList, WomanList)
     solver, matching = i.createModel(args.opt)
     status = solver.Solve()
-    
+
     if status == pywraplp.Solver.OPTIMAL:
         print("Execution Time:", time.time() - start)
         print("Optimal Val:", solver.Objective().Value(), "\n")
