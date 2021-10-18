@@ -1,11 +1,3 @@
-
-import random
-import numpy as np
-import bisect
-import time
-import sys
-import argparse
-
 # -*- coding: utf-8 -*-
 """matching_GA_düzeltme.ipynb
 
@@ -27,9 +19,12 @@ Original file is located at
 """
 Genetic Algorithm implementation based on paper "Two‐Sided Matching with Indifferences: Using Heuristics to Improve Properties of Stable Matchings" by Christian Haas 
 İlayda Begüm İzci-09.12.2020
-
-Last modified: 14/07/2021
 """
+import random
+import numpy as np
+import bisect
+import time
+import sys
 
 
 def randomTieBreaker(preferenceList):
@@ -219,9 +214,13 @@ def find_cycles(x, y, start, size):
     sT2 = size
     visited_singleMx = []
     count = 0
+
     while not found:
-        ind = woman_x.index(b)
-        if b == -1:
+        try:
+            ind = woman_x.index(b)
+        except:
+            return x, y
+        if b == -1: #single men
             if ind in visited_singleMx:
                 if b in woman_x[visited_singleMx[-1] + 1:]:
                     ind = woman_x.index(b, visited_singleMx[-1] + 1)
@@ -233,7 +232,6 @@ def find_cycles(x, y, start, size):
                     return x, y
             else:
                 visited_singleMx.append(ind)
-
         if ind >= size:  # single woman
             if sT2 >= len(woman_y):
                 return x, y
@@ -396,20 +394,16 @@ def genetic_algorithm_stepwise(population, fitness_fn, mpref, wpref, f_thres=Non
 
 
 def main():
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument('--file', '-f', metavar='', help='Input file name', type = str)
-    args = argparser.parse_args()
     # Read from file
     inputF = ""
-    if not args.file:
+    if len(sys.argv) == 1:  # in this case there is only sys.argv[0] which the is the name of the python file
         print("No file name supplied! Program will exit!")
         exit()
     else:
-        inputF = args.file
+        inputF = sys.argv[1]
 
     with open(inputF) as fp:
         lines = fp.readlines()
-        
     mensize = int(lines[1])
     womensize = int(lines[2])
     menprefDict = {key: [] for key in range(1, int(mensize) + 1)}
