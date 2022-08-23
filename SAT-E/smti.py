@@ -224,7 +224,7 @@ class DIMACSClause(DIMACSConstraint):
         return '1 ' + ' '.join([str(var) for var in self.var_list]) + ' 0'
 
     def soft_egal_render(self, weight):
-        return '{} '.format(str(2*n-weight)) + ' '.join([str(var) for var in self.var_list]) + ' 0'
+        return '{} '.format(str(weight)) + ' '.join([str(var) for var in self.var_list]) + ' 0'
 
 
 class ConstraintsBuffer():
@@ -529,9 +529,9 @@ class ProblemInstance():
             for man in self.men:
                 for woman in self.women:
                     if man.uid in woman.get_acceptable() and woman.uid in man.get_acceptable():
-                        constraints.soft_append_with_weight(DIMACSClause([res_match[man][woman]]), (woman.get_rank(man.uid) + man.get_rank(woman.uid)))
-            # for man in self.men:
-            #     constraints.soft_append_with_weight(DIMACSClause([res_match[man][NIL_WOMAN]]), 0)
+                        constraints.soft_append_with_weight(DIMACSClause([res_match[man][woman]]), 2*n-(woman.get_rank(man.uid) + man.get_rank(woman.uid)))
+            for man in self.men:
+                constraints.soft_append_with_weight(DIMACSClause([res_match[man][NIL_WOMAN]]), 2*n)
 
         if verbose:
             constraints.flush(opt,variable_registry=variable_registry)
