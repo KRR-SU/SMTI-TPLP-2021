@@ -1,3 +1,1 @@
-% OPTIMIZATION
-
-:~ T = #sum{R1 - R2, M, F: marry(M, F), mrank(M, F, R1), wrank(F, M, R2)}. [|T|]
+:~ T = #sum{R1-R2, X,Y: marry(X,Y), mrank(X,Y,R1), wrank(Y,X,R2)}. [|T|@1]

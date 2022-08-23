@@ -1,43 +1,46 @@
-% GENERATE
+% DEFINE
 
-% M prefers F to single
-m2single(M, F) :- man(M), woman(F), mrank(M, F, X).
+% man M prefers W to being single
+maccept(M, W) :- man(M), woman(W), mrank(M, W, R).
 
-% F prefers M to single
-w2single(F, M) :- man(M), woman(F), wrank(F, M, X).
+% woman W prefers man M to being single
+waccept(W, M) :- man(M), woman(W), wrank(W, M, R).
 
 % acceptability
-acceptable(M,F) :- m2single(M, F), w2single(F, M).
+acceptable(M, W) :- maccept(M, W), waccept(W, M).
 
+% GENERATE 
+
+% generate matching
+{marry(M, W) : woman(W), acceptable(M, W)}1 :- man(M).
+:- {marry(M, W) : man(M)} > 1, woman(W).
+
+% singles
 msingle(M) :- man(M), {marry(M, W) : woman(W)}0.
 wsingle(W) :- woman(W), {marry(M, W) : man(M)}0.
 
-{marry(M,F) : woman(F), acceptable(M,F)}1 :- man(M).
-:- {marry(M, F) : man(M)} > 1, woman(F).
+% man M prefers woman W1 to woman W2.
+mprefer(M, W1, W2) :- mrank(M, W1, R1), mrank(M, W2, R2), R1 < R2.
 
-% DEFINE
-
-% M prefers DF to CF.
-mprefer(M, DF, CF) :- mrank(M, CF, CUR), mrank(M, DF, DEV), DEV < CUR.
-
-% F prefers DM to CM.
-wprefer(F, DM, CM) :- wrank(F, CM, CUR), wrank(F, DM, DEV),  DEV < CUR.
+% woman W prefers man M1 to man M2.
+wprefer(W, M1, M2) :- wrank(W, M1, R1), wrank(W, M2, R2), R1 < R2.
 
 % TEST
 
-% it is assumed that marriage to an acceptable partner is preferred over being single
+% M1 and W2 form a blocking pair.
+:- man(M1; M2), woman(W1; W2), marry(M1, W1), marry(M2, W2),
+                    mprefer(M1, W2, W1), wprefer(W2, M1, M2).
 
-% m1-f1, m2-f2 -- m1 and f2 block
-:- man(M1; M2), woman(F1; F2), marry(M1, F1), marry(M2, F2), mprefer(M1, F2, F1), wprefer(F2, M1, M2).
+% M and W2 form a blocking pair.
+:- man(M), woman(W1; W2), marry(M, W1), wsingle(W2), 
+                          acceptable(M, W2), mprefer(M, W2, W1).
 
-% m-f1, f2 single -- m and f2 block
-:- man(M), woman(F1; F2), marry(M, F1), wsingle(F2), acceptable(M,F2), mprefer(M, F2, F1).
+% M1 and W2 form a blocking pair.
+:- man(M1; M2), woman(W), marry(M1, W), msingle(M2), 
+                          acceptable(M2, W), wprefer(W, M2, M1).
 
-% m1-f, m2 single -- m2 and f block
-:- man(M1; M2), woman(F), marry(M1, F), msingle(M2), acceptable(M2,F), wprefer(F, M2, M1).
-
-% m, f single -- m and f block
-:- man(M), woman(F), msingle(M), wsingle(F), acceptable(M,F).
+% M and W form a blocking pair.
+:- man(M), woman(W), msingle(M), wsingle(W), acceptable(M, W).
 
 % SHOW
 
