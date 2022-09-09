@@ -13,13 +13,17 @@ Original file is located at
 #Edited on 6/6/2020;
 #Number of men and women can be different now
 
+#Edited on 9/9/2022;
+#Allowing samples and fixing bug for ties on women's pref lists
+
 import numpy as np
+import argparse
 import random
 
-def CreateFile(w_pref, m_pref):
-  f = open('input.txt', 'w')
+def CreateFile(w_pref, m_pref, fname):
+  f = open(fname, 'w')
   #line1: dummy; line 2 & 3: # of men and women
-  f.write(str(0)+"\n"+str(n1)+"\n"+str(n2)+"\n")
+  f.write(str(0)+"\n"+str(len(m_pref))+"\n"+str(len(w_pref))+"\n")
   #--------------------------------------------
   #Writing every men's corresponding preference list:
   for i in range(len(m_pref)):
@@ -70,9 +74,7 @@ def GenerateRandomMatching(n1, n2, p1, p2):
       if p1 >= random.random():
         m_pref[i].remove(j)
         w_pref[j].remove(i)
-  #------------------------------
-  #print(m_pref)
-  #print(w_pref)
+
   return m_pref, w_pref
 #--------------------------------------------
 
@@ -127,6 +129,7 @@ def AddTies(p2, m_pref, w_pref):
       j += 1
       
   for i in range(0, len(w_pref_list2)):
+    j=1
     while j < len(w_pref_list2[i]):
       if random.random() <= p2 and j < len(w_pref_list2[i]):
         w_pref_list2[i][j-1].append(w_pref_list2[i][j][0])
@@ -134,8 +137,7 @@ def AddTies(p2, m_pref, w_pref):
         j -= 1
       j += 1
   #---------------------------------------------
-  print("final m_pref:", m_pref_list2)
-  print("final w_pref:", w_pref_list2)
+
   return m_pref_list2, w_pref_list2
 
 
@@ -148,20 +150,28 @@ def GentProsser(n1, n2, p1, p2):
      m_pref, w_pref = GenerateRandomMatching(n1, n2, p1, p2)  
     
 
-  #-------------------------------------------------------------------------
-  #print("m_pref:", m_pref)
-
   m_pref, w_pref = AddTies(p2, m_pref, w_pref) #Step 4 is done with this function
   return m_pref, w_pref
-  #file = open('input.txt', 'w')
-  
-n1 = int(input("Number of men:"))
-n2 = int(input("Number of women:"))
-p1 = float(input("p1:"))
-p2= float(input("p2:"))
-m_pref, w_pref = GentProsser(n1, n2, p1, p2)
 
-#Write to an input file
-CreateFile(w_pref, m_pref)
 
-"""# New Section"""
+if __name__=='__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-nmen", type=int,
+                        help="number of men")
+    parser.add_argument("-nwomen", type=int,
+                        help="number of women")
+    parser.add_argument("-p1", type=float,
+                        help="probability of incompleteness in pref. lists")
+    parser.add_argument("-p2", type=float,
+                        help="probability of ties in pref. lists")
+    parser.add_argument("-n", type=int,
+                        help="number of samples")
+    parser.add_argument("-dir", type=str,
+                        help="directory for the generated instance files")
+    args = parser.parse_args()
+
+    for i in range(1,args.n+1):
+      fname = '{}/input-smti-s-{}-i-{}-t-{}--{}.txt'.format(args.dir, args.nmen, args.p1, args.p2, i)
+      m_pref, w_pref = GentProsser(args.nmen, args.nwomen, args.p1, args.p2)
+      CreateFile(w_pref, m_pref, fname)
+
