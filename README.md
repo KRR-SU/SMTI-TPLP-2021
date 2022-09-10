@@ -65,7 +65,28 @@ Under '/Clingo' directory we provide logic programs that solve SMTI (smti.lp) an
     - For solving an SMTI problem: \
       ```clingo input.lp smti.lp```  
   - For solving optimization variants, specify the logic program of the variant of choice such as: \
-     ```clingo input.lp smti.lp maxcardinality.lp``` 
+     ```clingo input.lp smti.lp maxcardinality.lp```
+
+## Choco
+
+  Under '/Choco' we provide our implementations of the CP model proposed by Gent and Prosser (2002) for Max Card SMTI and the related decision problem.
+
+   * Prerequisites
+       - Choco version 4.10.9 must be installed. \
+            see: https://github.com/chocoteam/choco-solver/releases
+   
+   * To run our implementation for decision version, first use the following command\
+       ```javac -cp <choco-path> SMTI.java``` where choco-path must be the path to choco jar file.
+      
+      then run \
+        ```java -cp <choco-path> SMTI input.txt <opt>``` 
+         where opt is optional and can be count(counts all models), all(shows all models), if not given finds a model, if one exists, and prints it.
+    
+   * To run our implementation to solve Max Card SMTI, first use the following command\
+      ```javac -cp <choco-path> SMTI_maxcard.java``` 
+         where choco-path must be the path to choco jar file.
+     then run \
+        ```java -cp <choco-path> SMTI_maxcard input.txt```
 
 ## Gurobi
 
