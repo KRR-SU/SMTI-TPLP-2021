@@ -27,9 +27,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 from __future__ import with_statement
 
 import argparse
+from cgi import print_environ
 import os
 import subprocess
-from socket import TIPC_ADDR_NAMESEQ
 import string
 import re
 import time
@@ -183,9 +183,6 @@ class Woman(SinglePreferrer):
 class NilWoman(Woman):
     def __init__(self):
         Woman.__init__(self, preference_function=None, uid=NIL_WOMAN_UID)
-        self.capacity = 100
-        if self.capacity is not None:
-            assert isinstance(self.capacity, int)
         woman_dict[self.uid] = self
 
     def get_all_preferred(self, assignment):
@@ -386,38 +383,36 @@ class ProblemInstance():
 
     # a matching here is just a dictionary from man_id -> woman_id
     @staticmethod
-    def print_matching(matching, filename, times, header=None):
-         with open(filename, 'a') as f:
-            if header is not None:
-                f.write('# %s\n' % header)
-            f.write("Modeling time: {}s\n".format(round(times[0],3)))
-            f.write("Solving time: {}s\n".format(round(times[1],3)))
-            if len(matching) == 0:
-                f.write('m 0\n')
-                return
-            f.write('m 1\n')
-            for man_uid in matching.keys():
-                if matching[man_uid] == NIL_WOMAN_UID:
-                    f.write('%d %s\n' % (man_uid, NIL_WOMAN_SYMBOL))
-                else:
-                    f.write('%d %d\n' % (man_uid,
-                                           matching[man_uid]))
+    def print_matching(matching, times):
+        print("Modeling time: {}s\n".format(round(times[0],3)))
+        print("Solving time: {}s\n".format(round(times[1],3)))
+        if len(matching) == 0:
+            print('No pairs.')
+            return
+        print('m 1\n')
+        for man_uid in matching.keys():
+            if matching[man_uid] == NIL_WOMAN_UID:
+                print('%d %s\n' % (man_uid, NIL_WOMAN_SYMBOL))
+            else:
+                print('%d %d\n' % (man_uid,
+                                        matching[man_uid]))
 
     def solve_sat(self, solver,
                   problem_name='problem',
                   opt=0,
                   verbose=False, run_solver=True,
+                  output_dirname=None,
                   output_filename=None,
                   enumerate_all=False):
         start_time = time.time()
         variable_registry = {}
         problem_name_ = os.path.split(problem_name)[-1]
-        constraints_buffer_filename = 'constraints/constraints_buffer-%s' % (problem_name_)
+        constraints_buffer_filename = '%s/constraints/constraints_buffer-%s' % (output_dirname, problem_name_)
         if output_filename and not run_solver:
             solver_input_filename = output_filename
         else:
-            solver_input_filename = 'satfiles/%s.sat' % (problem_name_)
-        solver_output_filename = 'output/output-%s' % (problem_name_)
+            solver_input_filename = '%s/satfiles/%s.sat' % (output_dirname, problem_name_)
+        solver_output_filename = '%s/satoutputfiles/output-%s' % (output_dirname, problem_name_)
         constraints = ConstraintsBuffer(filename=constraints_buffer_filename)
         num_constraints = 0
         # this will keep track of the DIMACS number of each matching variable
@@ -676,6 +671,9 @@ def main():
         help='the solver to be used: mip or sat',
         choices=['sat'], default='sat')
     parser.add_argument(
+        '--outdir',
+        help='the output directory for intermediate files', default='')
+    parser.add_argument(
         '-opt',
         help='the default option is SMTI (opt=0). \
               use -opt=0 for SMTI, use -opt=1 for Max Cardinality SMTI and -opt=2 for Egalitarian SMTI', 
@@ -694,12 +692,12 @@ def main():
 
     basen = os.path.basename(args.problem)
 
-    if not args.output and not args.formulate:
-        output_filename = 'output-matching-t/' + os.path.splitext(basen)[0] + SUFFIX_TABLE[args.solver]
-    elif not args.output and args.formulate:
-        output_filename = 'output-matching-t/' + os.path.splitext(basen)[0] + FORMULATION_TABLE[args.solver]
-    else:
-        output_filename = args.output
+    # if not args.output and not args.formulate:
+    #     output_filename = '{}/output-matching/'.format(args.outdir) + os.path.splitext(basen)[0] + SUFFIX_TABLE[args.solver]
+    # elif not args.output and args.formulate:
+    #     output_filename = '{}/output-matching/'.format(args.outdir) + os.path.splitext(basen)[0] + FORMULATION_TABLE[args.solver]
+    # else:
+    #     output_filename = args.output
 
     if args.formulate:
         run_solver = False
@@ -711,19 +709,18 @@ def main():
                 'SAT_SOLVER_PATH must contain the path to a '
                 + 'SAT solver that accepts the DIMACS input format')
         optPrefix = ['', 'Max Cardinality', 'Egalitarian']
-        with open(output_filename,'w') as f:
-            f.write('Solving {} SMTI...\n'.format(optPrefix[int(args.opt)]))
-        print('Solving...')
+        # with open(output_filename,'w') as f:
+        #     f.write('Solving {} SMTI...\n'.format(optPrefix[int(args.opt)]))
+        # print('Solving...')
         cputimes = problem.solve_sat(solver=solver_path, verbose=args.verbose,
                                    run_solver=run_solver,
                                    problem_name=args.problem,
                                    opt=int(args.opt),
+                                   output_dirname=args.outdir,
                                    output_filename=output_filename,
                                    enumerate_all=args.enumerate_all)
     if run_solver:
-        ProblemInstance.print_matching(problem.matching,
-                                       output_filename, cputimes)
-        print('Output is written to', output_filename)
+        ProblemInstance.print_matching(problem.matching, cputimes)
 
 if __name__ == "__main__":
     main()

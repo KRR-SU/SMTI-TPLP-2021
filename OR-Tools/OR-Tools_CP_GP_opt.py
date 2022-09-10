@@ -30,7 +30,7 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
 class Instance:
     def __init__(self, manList, womanList):
         self.manList = manList
-        self.womanList = WomanList
+        self.womanList = womanList
         
         self.numberOfMan = len(manList.keys())
         self.numberOfWoman = len(womanList.keys())
@@ -213,12 +213,6 @@ def main():
         exit()
     else:
         inputFileName = args.file
-    
-    if not args.output: 
-        print("No output file name supplied!")
-        exit()
-    else:
-        outputFileName = args.output
 
     f = open(inputFileName, "r")  # Read the input file
     lines = f.readlines()
@@ -317,22 +311,20 @@ def main():
     c = SolutionPrinter(x, y)
 
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        with open(outputFileName, 'w') as f:
-            f.write("Execution Time: {}\n".format(time.time() - start))
-            f.write("Number of Branches: {}\n".format(solver.NumBranches()))
-            f.write("Number of Booleans: {}\n".format(solver.NumBooleans()))
-            f.write("Number of Conflicts: {}\n".format(solver.NumConflicts()))
-            if args.opt == 0: 
-                f.write("Objective Value(Max Card): {}\n".format(solver.ObjectiveValue()))
-            elif args.opt == 1:
-                f.write("Objective Value(Egalitarian): {}\n".format(solver.ObjectiveValue()))
-            else:
-                f.write("Objective Value(Sex Equal): {}\n".format(solver.ObjectiveValue()))
-            f.write('Solution:\n')
-            f.write('\n'.join(["m-{}: w-{}".format(i, str(solver.Value(x[i]))) for i in range(1, numberOfMan+1)]))
+        print("Execution Time: {}\n".format(time.time() - start))
+        print("Number of Branches: {}\n".format(solver.NumBranches()))
+        print("Number of Booleans: {}\n".format(solver.NumBooleans()))
+        print("Number of Conflicts: {}\n".format(solver.NumConflicts()))
+        if args.opt == 0: 
+            print("Objective Value(Max Card): {}\n".format(solver.ObjectiveValue()))
+        elif args.opt == 1:
+            print("Objective Value(Egalitarian): {}\n".format(solver.ObjectiveValue()))
+        else:
+            print("Objective Value(Sex Equal): {}\n".format(solver.ObjectiveValue()))
+        print('Solution:\n')
+        print('\n'.join(["m-{}: w-{}".format(i, str(solver.Value(x[i]))) for i in range(1, numberOfMan+1)]))
     else:
-        with open(outputFileName, 'w') as f:
-            f.write("No solution found.")
+        print("No solution found.")
 
 
 if __name__ == '__main__':
