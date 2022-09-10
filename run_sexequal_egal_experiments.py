@@ -128,7 +128,7 @@ def solve(root, inputFile, outputFilesPath, dictKey, size, opt, solverType):
         cmd =  "python3 OR-Tools/OR-Tools_CP.py --file " + os.path.join(root, inputFile) + " --opt={}".format(opt)
     elif solverType == 6:
         cmd =  "python3 OR-Tools/OR-Tools_MIP.py --file " + os.path.join(root, inputFile) + " --opt={}".format(opt)
-    print(cmd)
+
     subPro = timeout(func=run_SMTI_Solver, command=cmd, timeoutValue=TIMEOUT_VALUE)
 
     if subPro is False:  # then the process of gurobi solver is terminated because timeout is being reached

@@ -671,7 +671,7 @@ def main():
         help='the solver to be used: mip or sat',
         choices=['sat'], default='sat')
     parser.add_argument(
-        '--outdir',
+        '-outdir','--outdir',
         help='the output directory for intermediate files', default='')
     parser.add_argument(
         '-opt',
