@@ -65,7 +65,26 @@ Under '/Clingo' directory we provide logic programs that solve SMTI (smti.lp) an
     - For solving an SMTI problem: \
       ```clingo input.lp smti.lp```  
   - For solving optimization variants, specify the logic program of the variant of choice such as: \
-     ```clingo input.lp smti.lp maxcardinality.lp``` 
+     ```clingo input.lp smti.lp maxcardinality.lp```
+
+## Choco
+
+  Under '/Choco' we provide our implementations of the CP model proposed by Gent and Prosser (2002) for Max Card SMTI and the related decision problem.
+
+   * Prerequisites
+       - Choco version 4.10.9 must be installed. \
+            see: https://github.com/chocoteam/choco-solver/releases
+   
+   * To run our implementation for decision version, first use the following command\
+       ```javac -cp <choco-path> SMTI.java``` where choco-path must be the path to choco jar file.
+
+      then run \
+        ```java -cp <choco-path> SMTI input.txt <opt>``` where opt is optional and can be count(counts all models), all(shows all models), if not given finds a model, if one exists, and prints it.
+    
+   * To run our implementation to solve Max Card SMTI, first use the following command\
+      ```javac -cp <choco-path> SMTI_maxcard.java``` where choco-path must be the path to choco jar file.
+     then run \
+        ```java -cp <choco-path> SMTI_maxcard input.txt```
 
 ## Gurobi
 
@@ -96,7 +115,8 @@ Under '/GA' we provide our implementation of the algorithm proposed by Haas (202
 * Sample Usage 
    - To solve Max Cardinality SMTI, run \
     ```python3 matching_ga.py -f input.txt``` 
-           
+
+
 ## OR-Tools 
 
   Under '/OR-Tools' we provide our implementation of the ILP model proposed by Kwanashie and Manlove (2014) and implementation of our CP model to solve Max Card SMTI.
@@ -123,15 +143,19 @@ Under '/GA' we provide our implementation of the algorithm proposed by Haas (202
    We have adapted the SAT formulation introduced by Drummond et al. (2015) to solve SMTI.
 
    * Prerequisites
-      - SAT solver lingeling must be installed. \
-            see: http://fmv.jku.at/lingeling/
+      - For SMTI, a SAT solver is required. 
+	  - For solving Egalitarian and Sex-Equal SMTI,  a MaxSAT solver is required.
 
-  The environment variable SAT_SOLVER_PATH should be set to the path to lingeling.
+  The environment variable SAT_SOLVER_PATH should be set to the path to the SAT solver.
 
   * To use SAT-E, run \
-      ```python3 smti.py input.txt```
-
-  * Output will be written to a file with random suffix. Output file name can be specified by -o argument. First line of the output represents the matching number, 'm 1' reads as 'Matching 1'. Starting from the second line, each line represents a pair, first id represents the man and second id represents his partner.
+      ```python3 smti.py input.txt ``` , 
+	   - use --opt=0 for SMTI, --opt=1 for Max Cardinality SMTI and --opt=2 for Egalitarian SMTI
+       - Directory name for intermediate files should be specified by -outdir argument.
+	   - Output file name should be specified by -o argument. 
+           *  First line of the output represents the matching number.
+           * 'm 1' reads as 'Matching 1'. 
+           * Starting from the second line, each line represents a pair, first id represents the man and second id represents his partner.
 
 
 ## Acknowledgments

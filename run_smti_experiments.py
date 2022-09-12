@@ -1,7 +1,43 @@
 import subprocess
 import os
+import re
 import subprocessmethodrun
 import argparse
+
+
+TIMEOUT_VALUE = 2000 # in seconds
+OUTPUT_DIR = 'OUTPUT'
+
+def SAT_inputConverter(inputFile, size):
+    output_str=''
+    with open(inputFile) as f:
+        lines = f.readlines()[3:]
+        for line in lines[:size]:
+           output_str += 'm ' + line.split()[0] + ' '
+           ff = re.findall('\(([\d ]+)\)', line)
+           prefs = []
+           for f in ff:
+               if ' ' in f:
+                   prefs.append('{' + f.replace(' ',',') + '}')
+               else:
+                   prefs.append(f)
+           output_str += ' '.join(prefs)
+           output_str += '\n'
+        for line in lines[size:]:
+           output_str += 'w ' + line.split()[0] + ' '
+           ff = re.findall('\(([\d ]+)\)', line)
+           prefs = []
+           for f in ff:
+               if ' ' in f:
+                   prefs.append('{' + f.replace(' ',',') + '}')
+               else:
+                   prefs.append(f)
+           output_str += ' '.join(prefs)
+           output_str += '\n'
+    
+    f = open('input_SAT.txt', 'w')
+    f.write(output_str)
+    f.close()
 
 
 def ASP_inputConverter(inputFile):
@@ -49,8 +85,8 @@ def ASP_inputConverter(inputFile):
 def run_cmodels(input_path):
     for f in os.listdir(input_path):
         ASP_inputConverter(os.path.join(input_path, f))
-        rsname = 'OUTPUT/{}'.format(f.replace('input', 'output').replace('.txt', '_SMTI_SAT.txt'))
-        command = "gringo ASP/smti_lparse.lp input_ASP.lp | timeout -t 2000 -m 2000000 cmodels -zc -statistics"
+        rsname = '{}/{}'.format(OUTPUT_DIR,f.replace('input', 'output').replace('.txt', '_SMTI_CMODELS.txt'))
+        command = "gringo Clingo/smti_lparse.lp input_ASP.lp | timeout -t 2000 -m 2000000 cmodels -zc -statistics"
         retcode, stdout, stderr = subprocessmethodrun.run(command, shell=True, stdout=subprocess.PIPE)
         output = stdout.decode('utf-8')
         with open(rsname, "w") as out:
@@ -60,8 +96,19 @@ def run_cmodels(input_path):
 def run_clingo(input_path):
     for f in os.listdir(input_path):
         ASP_inputConverter(os.path.join(input_path, f))
-        rsname = 'OUTPUT/{}'.format(f.replace('input', 'output').replace('.txt','_SMTI_CLINGO.txt'))
+        rsname = '{}/{}'.format(OUTPUT_DIR,f.replace('input', 'output').replace('.txt','_SMTI_CLINGO.txt'))
         command = "clingo --stats input_ASP.lp Clingo/smti.lp  --time-limit=2000"
+        retcode, stdout, stderr = subprocessmethodrun.run(command, shell=True, stdout=subprocess.PIPE)
+        output = stdout.decode('utf-8')
+        with open(rsname, "w") as out:
+            print(rsname)
+            out.write(output)
+
+def run_sat(input_path, size):
+    for f in os.listdir(input_path):
+        SAT_inputConverter(os.path.join(input_path, f), size)
+        rsname = '{}/{}'.format(OUTPUT_DIR, f.replace('input', 'output').replace('.txt','_SMTI_SAT.txt'))
+        command = "python3 SAT-E/smti.py input_SAT.txt -opt=0 -outdir=dum"
         retcode, stdout, stderr = subprocessmethodrun.run(command, shell=True, stdout=subprocess.PIPE)
         output = stdout.decode('utf-8')
         with open(rsname, "w") as out:
@@ -72,7 +119,7 @@ def run_clingo(input_path):
 def main():
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('--solverType', '-sT', metavar='', help='Specify the solver, 0: Clingo, 1: Cmodels ', type=int, default=0, choices=[0, 1])
+    argparser.add_argument('--solverType', '-sT', metavar='', help='Specify the solver, 0: Clingo, 1: Cmodels 2:SAT', type=int, default=0, choices=[0, 1, 2])
     argparser.add_argument('--size', '-s', metavar='', help='Specify the size of the benchmark instances', type=int, default=50, choices=[50,100])
     args = argparser.parse_args()
     size = args.size
@@ -81,8 +128,10 @@ def main():
 
     if args.solverType == 0:
         run_clingo(input_path)
-    else:
+    elif args.solverType == 1:
         run_cmodels(input_path)
+    elif args.solverType == 2:
+        run_sat(input_path, size)
 
 
 if __name__ == '__main__':

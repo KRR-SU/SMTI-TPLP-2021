@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import multiprocessing
 import json
@@ -6,7 +7,7 @@ import argparse
 
 TIMEOUT_VALUE = 2000 # in seconds
 
-solvers = ['GUROBI', 'LTIU', 'CLINGO', 'CP', 'MIP', 'GA']
+solvers = ['GUROBI', 'LTIU', 'CLINGO', 'SAT', 'OR-CP-GP', 'OR-CP-KM', 'OR-MIP-KM', 'GA']
 
 
 def ASP_inputConverter(inputFile):
@@ -50,6 +51,37 @@ def ASP_inputConverter(inputFile):
     f.write(output_str)
     f.close()
 
+def SAT_inputConverter(inputFile, size):
+    output_str=''
+    with open(inputFile) as f:
+        lines = f.readlines()[3:]
+        for line in lines[:size]:
+           output_str += 'm ' + line.split()[0] + ' '
+           ff = re.findall('\(([\d ]+)\)', line)
+           prefs = []
+           for f in ff:
+               if ' ' in f:
+                   prefs.append('{' + f.replace(' ',',') + '}')
+               else:
+                   prefs.append(f)
+           output_str += ' '.join(prefs)
+           output_str += '\n'
+        for line in lines[size:]:
+           output_str += 'w ' + line.split()[0] + ' '
+           ff = re.findall('\(([\d ]+)\)', line)
+           prefs = []
+           for f in ff:
+               if ' ' in f:
+                   prefs.append('{' + f.replace(' ',',') + '}')
+               else:
+                   prefs.append(f)
+           output_str += ' '.join(prefs)
+           output_str += '\n'
+    
+    f = open('input_SAT.txt', 'w')
+    f.write(output_str)
+    f.close()
+
 
 def timeout(func, command, timeoutValue):
     manager = multiprocessing.Manager()
@@ -72,20 +104,25 @@ def run_SMTI_Solver(command, return_dict):
     return_dict[0] = subPro
 
 
-def solve(root, inputFile, outputFilesPath, dictKey, solverType):
+def solve(root, inputFile, outputFilesPath, dictKey, size, solverType):
     if solverType == 1:
         cmd = "python3 Gurobi/MILP_Gurobi.py -f {}".format(os.path.join(root, inputFile))
     elif solverType == 2:
         cmd = "python3 LTIU/LTIU.py " + os.path.join(root, inputFile)
     elif solverType == 3:
-        cmd = "clingo -V Clingo/smti.lp Clingo/maxcardinality.lp input_ASP.lp --stats"
+        cmd = "clingo Clingo/smti.lp Clingo/maxcardinality.lp input_ASP.lp --stats"
         ASP_inputConverter(os.path.join(root, inputFile))
     elif solverType == 4:
-        cmd =  "python OR-Tools/OR-Tools_CP-SAT.py " + os.path.join(root, inputFile)
+        cmd =  "python3 SAT-E/smti.py input_SAT.txt -opt=1 --outdir=OUTPUT"
+        SAT_inputConverter(os.path.join(root, inputFile), size)
     elif solverType == 5:
-        cmd =  "python OR-Tools/OR-Tools_MIP.py " + os.path.join(root, inputFile)
+        cmd =  "python3 OR-Tools/OR-Tools_CP_GP_opt.py --file " + os.path.join(root, inputFile) + " --opt=0"
     elif solverType == 6:
-        cmd = "python GA/matching_ga.py " + os.path.join(root, inputFile)
+        cmd =  "python3 OR-Tools/OR-Tools_CP.py --file " + os.path.join(root, inputFile)
+    elif solverType == 7:
+        cmd =  "python3 OR-Tools/OR-Tools_MIP.py --file " + os.path.join(root, inputFile)
+    elif solverType == 8:
+        cmd = "python3 GA/matching_ga.py " + os.path.join(root, inputFile)
 
     subPro = timeout(func=run_SMTI_Solver, command=cmd, timeoutValue=TIMEOUT_VALUE)
 
@@ -113,13 +150,15 @@ def solve(root, inputFile, outputFilesPath, dictKey, solverType):
 def main():
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('--solverType', '-sT', metavar='', help='Specify the solver you want to run(default will run them all)', type=int, default=-1, choices=[1, 2, 3, 4, 5, 6])
+    argparser.add_argument('--solverType', '-sT', metavar='', help='Specify the solver you want to run(default will run them all)', type=int, default=-1, choices=range(1,9))
     # --solverType = 1 -> Gurobi will run
     # --solverType = 2 -> Local Search(LTIU) will run
-    # --solverType = 3 -> ASP will run
-    # --solverType = 4 -> OR-Tools CP_SAT will run
-    # --solverType = 5 -> OR-Tools MIP will run
-    # --solverType = 6 -> Genetic Algorithm will run
+    # --solverType = 3 -> Clingo will run
+    # --solverType = 4 -> SAT will run
+    # --solverType = 5 -> OR-Tools CP_SAT (GP) will run
+    # --solverType = 6 -> OR-Tools CP_SAT (KM) will run
+    # --solverType = 7 -> OR-Tools MIP (KM) will run
+    # --solverType = 8 -> Genetic Algorithm will run
     # --solverType = -1 -> All of the solvers will run
 
     argparser.add_argument('--size', '-s', metavar='', help='Specify the size of the benchmark instances', type=int, default=-1, choices=[50,100])
@@ -145,23 +184,11 @@ def main():
             p2 = inputFile[inputFile.find("-t-") + 3:inputFile.find("pc--")]
 
             Dictionary_Key = instance_size + "_" + p1 + "_" + p2
-            
             if selectedSolver == -1:
-                solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, 1)
-                solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, 2)
-                solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, 3)
-                solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, 4)
-                solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, 5)
-                solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, 6)
-            elif selectedSolver != 6:
-                solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, selectedSolver)
+                for i in range(1,len(solvers)+1):
+                    solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, int(instance_size), i)
             else:
-                try:
-                    solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, 6)
-                except:
-                    print("A problem occured in file:", inputFile)
-
-
+                solve(root, inputFile, PATH_TO_OUTPUT_FILES, Dictionary_Key, int(instance_size), selectedSolver)
 
 if __name__ == '__main__':
     main()
